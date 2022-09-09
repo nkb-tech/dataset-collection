@@ -1,5 +1,5 @@
 # dataset-collection
-Framework to collect dataset in COCO format for images/videos using pretrained neural networks
+Framework to collect dataset in COCO format for images/videos using pretrained neural networks.
 
 # Datasets Description
 
@@ -65,3 +65,19 @@ category{
 }
 ```
 </details>
+
+## How to run
+
+Before running you should change the default values in `docker_names.sh`. After that type
+
+```bash
+source docker_names.sh
+bash build+run.sh
+python3 main.py -c config.yaml -s
+```
+
+To see help info about the script, type
+
+```bash
+python3 main.py --help
+```
