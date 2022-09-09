@@ -1,0 +1,19 @@
+model:
+    task: 'segm'
+    mmconfig: /home/user/mmlab/mmdet/configs/mask2former/mask2former_swin-l-p4-w12-384-in21k_lsj_16x1_100e_coco-panoptic.py
+    mmcheckpoint: https://download.openmmlab.com/mmdetection/v2.0/mask2former/mask2former_swin-l-p4-w12-384-in21k_lsj_16x1_100e_coco-panoptic/mask2former_swin-l-p4-w12-384-in21k_lsj_16x1_100e_coco-panoptic_20220407_104949-d4919c44.pth
+    target_classes:
+        - 'dog'
+    confidence_treshold:
+        - 0.5
+    device: 'cuda:0'
+
+dataset:
+    dataset_type: youtube-vos
+    input_path: video/example.mp4
+    frame_per_second: 30
+    file_extensions:
+        - 'mp4'
+        - 'mov'
+        - 'avi'
+        - 'mkv'
