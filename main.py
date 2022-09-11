@@ -138,81 +138,96 @@ def main(
         dir_with_images = os.path.join(dir_with_video_path, 'dataset')
         os.makedirs(dir_with_images, exist_ok=True)
 
-    while True:
+    not_error = True
 
-        ret, original_frame = capture.read()
+    while not_error:
 
-        output_image_path = os.path.abspath(os.path.join(dir_with_images, f'{counter}.jpg'))
+        buffer_batched_frames = []
 
-        if not ret:
+        for _ in range(cfg['model']['batch']):
+            
+            not_error, original_frame = capture.read()
+
+            #output_image_path = os.path.abspath(os.path.join(dir_with_images, f'{counter + 1}.jpg'))
+
+            if not not_error:
+                break
+
+            frame = cv2.cvtColor(original_frame, cv2.COLOR_BGR2RGB)
+            buffer_batched_frames.append(frame)
+
+        if not not_error:
             break
 
-        frame = cv2.cvtColor(original_frame, cv2.COLOR_BGR2RGB)
-        image_height, image_width, _ = frame.shape
-
         tick = time.perf_counter()
-        predicted_instances = inference_detector(model, frame)
+        predicted_instances = inference_detector(model, buffer_batched_frames)
         tack = time.perf_counter()
 
-        bboxs, masks = select_instances(
-            predicted_instances,
-            cfg['model']['target_classes'],
-            cfg['model']['confidence_treshold'],
-        )
+        # for each image
+        for i in range(cfg['model']['batch']):
 
-        image_info = {
-            'id': counter,
-            'width': image_width,
-            'height': image_height,
-            'file_name': output_image_path,
-        }
+            bboxs, masks = select_instances(
+                predicted_instances[i],
+                cfg['model']['target_classes'],
+                cfg['model']['confidence_treshold'],
+            )
 
-        num_objects = 0
+            image_height, image_width, _ = buffer_batched_frames[i].shape
+            output_image_path = os.path.abspath(os.path.join(dir_with_images, f'{counter}.jpg'))
 
-        # for each class
-        for j in range(len(bboxs)):
-            # in class for each object
-            for bbox, mask in zip(bboxs[j], masks[j]):
+            image_info = {
+                'id': counter,
+                'width': image_width,
+                'height': image_height,
+                'file_name': output_image_path,
+            }
 
-                x_l, y_l, x_r, y_r, _ = bbox
+            num_objects = 0
 
-                x = (x_r + x_l) / 2
-                y = (y_r + y_l) / 2
-                width = x_r - x_l
-                height = y_r - y_l
+            # for each class
+            for j in range(len(bboxs)):
+                # in class for each object
+                for bbox, mask in zip(bboxs[j], masks[j]):
 
-                rle_encoded = mask_utils.encode(np.asfortranarray(mask.astype(bool)))
+                    x_l, y_l, x_r, y_r, _ = bbox
 
-                annotation = {
-                    'id': annotation_id,
-                    'image_id': counter,
-                    'class_id': j + 1,
-                    'area': int(width * height),
-                    'bbox': [int(x), int(y), int(width), int(height)],
-                    'segmentation': {
-                        'size': rle_encoded['size'],
-                        'counts': rle_encoded['counts'].decode(encoding='UTF-8'),
-                    },
-                    'iscrowd': 0,
-                }
-                annotation_id += 1
+                    x = (x_r + x_l) / 2
+                    y = (y_r + y_l) / 2
+                    width = x_r - x_l
+                    height = y_r - y_l
 
-                output_data['annotations'].append(annotation)
+                    rle_encoded = mask_utils.encode(np.asfortranarray(mask.astype(bool)))
 
-                num_objects += 1 
+                    annotation = {
+                        'id': annotation_id,
+                        'image_id': counter,
+                        'class_id': j + 1,
+                        'area': int(width * height),
+                        'bbox': [int(x), int(y), int(width), int(height)],
+                        'segmentation': {
+                            'size': rle_encoded['size'],
+                            'counts': rle_encoded['counts'].decode(encoding='UTF-8'),
+                        },
+                        'iscrowd': 0,
+                    }
+                    annotation_id += 1
 
-        if num_objects > 0:
-            output_data['images'].append(image_info)
-            if save_images:
-                cv2.imwrite(output_image_path, original_frame)
+                    output_data['annotations'].append(annotation)
 
-        counter += 1
+                    num_objects += 1 
 
-        progress_bar.set_postfix({
-            'num_objects': num_objects,
-            'detect_time (FPS)': 1 / (tack - tick),
-        })
-        progress_bar.update()
+            if num_objects > 0:
+                output_data['images'].append(image_info)
+                if save_images:
+                    cv2.imwrite(output_image_path, original_frame)
+
+            counter += 1
+
+            progress_bar.set_postfix({
+                'num_objects': num_objects,
+                'detect_time (FPS)': 1 / (tack - tick),
+            })
+            progress_bar.update()
 
     with open(os.path.join(dir_with_video_path, 'train.json'), 'w') as f:
         json.dump(output_data, f)
