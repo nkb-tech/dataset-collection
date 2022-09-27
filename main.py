@@ -1,3 +1,4 @@
+from re import I
 import click
 import tqdm
 import os
@@ -73,6 +74,19 @@ def select_instances(
 
     return target_result
 
+def get_indexes_lower_fps(
+    num_frames: int,
+    base_fps: int,
+    new_fps: int,
+) -> tuple:
+
+    new_frames = int(num_frames * new_fps / base_fps)
+    base_idx = np.arange(num_frames)
+    extended_idx = np.repeat(base_idx, new_frames)
+    mask = np.arange(len(extended_idx)) % num_frames == 0
+
+    return extended_idx[mask]
+
 
 @click.command()
 @click.option(
@@ -111,8 +125,17 @@ def main(
     if video_path[video_path.rfind('.') + 1:].lower() in cfg['dataset']['file_extensions']:
         capture = cv2.VideoCapture(video_path)
         length = int(capture.get(cv2.CAP_PROP_FRAME_COUNT))
+        base_fps = capture.get(cv2.CAP_PROP_FPS)
+        lower_fps = cfg['dataset']['frame_per_second']
+        # cannot be more than base
+        lower_fps = min(lower_fps, base_fps)
+        video_idxs = get_indexes_lower_fps(
+            num_frames=length,
+            base_fps=base_fps,
+            new_fps=lower_fps,
+        )
     else:
-        print('Waiting for video file')
+        raise FileNotFoundError('Check imput file format.')
 
     output_data = {
         'images': [],
@@ -129,6 +152,9 @@ def main(
         output_data['categories'].append(category)
 
     counter = 0
+    counter_frame_id = 0
+    read_idx = 0
+    key_frame = False
     annotation_id = 0
     progress_bar = tqdm.tqdm(total=length)
 
@@ -145,16 +171,33 @@ def main(
         buffer_batched_frames = []
 
         for _ in range(cfg['model']['batch']):
-            
-            not_error, original_frame = capture.read()
 
-            #output_image_path = os.path.abspath(os.path.join(dir_with_images, f'{counter + 1}.jpg'))
+            if not key_frame:
+                if counter_frame_id < len(video_idxs):
+                    read_idx_now = video_idxs[counter_frame_id]
+                else:
+                    not_error = False
+                    break
+            else:
+                # TODO will raise an error with small number of frames
+                read_idx_now = read_idx
+            
+            capture.set(cv2.CAP_PROP_POS_FRAMES, read_idx_now)
+            not_error, original_frame = capture.read()
 
             if not not_error:
                 break
 
             frame = cv2.cvtColor(original_frame, cv2.COLOR_BGR2RGB)
             buffer_batched_frames.append(frame)
+            
+            if not key_frame:
+                read_idx = video_idxs[counter_frame_id] + 1
+                counter_frame_id += 1
+            else:
+                read_idx += 1
+                if read_idx > video_idxs[counter_frame_id]:
+                    counter_frame_id += 1
 
         if not not_error:
             break
@@ -227,7 +270,20 @@ def main(
                 'num_objects': num_objects,
                 'detect_time (FPS)': 1 / (tack - tick),
             })
-            progress_bar.update()
+            if key_frame:
+                delta = 1
+            else:
+                id_prev = counter_frame_id - cfg['model']['batch'] + i
+                id_prev_prev = counter_frame_id - cfg['model']['batch'] + i - 1
+                if id_prev_prev < 0:
+                    id_prev_prev = 0
+                delta = video_idxs[id_prev] - video_idxs[id_prev_prev]
+            progress_bar.update(delta)
+
+        if num_objects > 0:
+            key_frame = True
+        else:
+            key_frame = False
 
     with open(os.path.join(dir_with_video_path, 'train.json'), 'w') as f:
         json.dump(output_data, f)
