@@ -1,4 +1,5 @@
 #!/bin/bash
+
 export DOCKER_UID
 export DOCKER_IMAGE_NAME
 export DOCKER_IMAGE_VERSION

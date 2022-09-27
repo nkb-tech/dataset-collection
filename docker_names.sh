@@ -1,4 +1,3 @@
-
 #!/bin/bash
 
 export DOCKER_UID=1000

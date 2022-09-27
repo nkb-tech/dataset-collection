@@ -1,4 +1,3 @@
-from re import I
 import click
 import tqdm
 import os
