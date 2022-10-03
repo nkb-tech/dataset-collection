@@ -19,17 +19,17 @@ video{
     "file_names" : [file_name],
 }
 annotation{
-    "id" : int, 
-    "video_id" : int, 
-    "category_id" : int, 
-    "segmentations" : [RLE or [polygon] or None], 
-    "areas" : [float or None], 
-    "bboxes" : [[x,y,width,height] or None], 
+    "id" : int,
+    "video_id" : int,
+    "category_id" : int,
+    "segmentations" : [RLE or [polygon] or None],
+    "areas" : [float or None],
+    "bboxes" : [[x,y,width,height] or None],
     "iscrowd" : 0 or 1,
 }
 category{
-    "id" : int, 
-    "name" : str, 
+    "id" : int,
+    "name" : str,
     "supercategory" : str,
 }
 ```
@@ -80,4 +80,10 @@ To see help info about the script, type
 
 ```bash
 python3 main.py --help
+```
+
+## Contribute
+```bash
+pip install pre-commit
+pre-commit install
 ```

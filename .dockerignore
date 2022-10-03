@@ -1,0 +1,12 @@
+.dockerignore
+.DS_Store
+.git
+.github
+.gitignore
+.gitmodules
+.idea
+.ipython_checkpoints
+.ipynb_checkpoints
+tests
+README.md
+Dockerfile
