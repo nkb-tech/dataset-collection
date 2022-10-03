@@ -11,7 +11,7 @@ model:
 
 dataset:
     dataset_type: youtube-vos
-    input_path: video/example.mp4
+    input_path: assets/example.mp4
     frame_per_second: 0.2
     file_extensions:
         - 'mp4'
