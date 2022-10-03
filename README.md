@@ -71,8 +71,8 @@ category{
 Before running you should change the default values in `docker_names.sh`. After that type
 
 ```bash
-source docker_names.sh
-bash build+run.sh
+source docker/docker_names.sh
+bash docker/build+run.sh
 python3 main.py -c config.yaml -s
 ```
 
