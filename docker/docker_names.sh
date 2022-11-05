@@ -9,3 +9,5 @@ export DOCKER_IMAGE_VERSION=dataset_collection:v1.0.0
 export DOCKER_CONTAINER_NAME=dataset_collection
 export DOCKER_USER_NAME=user
 export DOCKER_PROJECT_NAME=project
+export DEFAULT_DATA_PATH=/home/alexander/msbtech/petsearch/data
+export DOCKER_DATA_PATH=data

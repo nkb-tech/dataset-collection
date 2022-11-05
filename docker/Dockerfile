@@ -1,7 +1,8 @@
 ARG CUDA_VERSION=11.3.1
 ARG OS_VERSION=20.04
+ARG CUDNN_VERSION=8
 
-FROM nvidia/cuda:${CUDA_VERSION}-cudnn8-devel-ubuntu${OS_VERSION}
+FROM nvidia/cuda:${CUDA_VERSION}-cudnn${CUDNN_VERSION}-devel-ubuntu${OS_VERSION}
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -44,26 +45,28 @@ RUN useradd -m ${USER} --uid=${UID} \
     && adduser ${USER} sudo \
     && usermod -a -G sudo ${USER}
 
-RUN mkdir -p ${DEFAULT_PATH}/${USER}/${PROJECT_PATH}/ && chown -R ${UID}:${GID} ./
-COPY --chown=${USER}:${USER} requirements.txt ${DEFAULT_PATH}/${USER}/${PROJECT_PATH}/${PROJECT_NAME}/
+RUN mkdir -p ${DEFAULT_PATH}/${USER}/${PROJECT_PATH}/ \
+    && chown -R ${UID}:${GID} ./
+
+COPY --chown=${USER}:${USER} [
+    "requirements.txt",
+    "requirements/",
+    "${DEFAULT_PATH}/${USER}/${PROJECT_PATH}/${PROJECT_NAME}/",
+]
 
 # install default requirements
-RUN python3 -m pip install \
-        --no-cache-dir \
-        --upgrade \
-            pip \
-            wheel \
-            setuptools \
-            packaging \
-    && python3 -m pip install \
-        --no-cache-dir \
-        --ignore-installed \
-        --requirement \
-            ${DEFAULT_PATH}/${USER}/${PROJECT_PATH}/${PROJECT_NAME}/requirements.txt \
-    && rm ${DEFAULT_PATH}/${USER}/${PROJECT_PATH}/${PROJECT_NAME}/requirements.txt
+RUN pip install \
+    --no-cache-dir \
+    --requirement \
+        ${DEFAULT_PATH}/${USER}/${PROJECT_PATH}/${PROJECT_NAME}/requirements/preinstall.txt \
+    --requirement \
+        ${DEFAULT_PATH}/${USER}/${PROJECT_PATH}/${PROJECT_NAME}/requirements/install.txt \
+    && rm ${DEFAULT_PATH}/${USER}/${PROJECT_PATH}/${PROJECT_NAME}/requirements.txt \
+    && rm -rf ${DEFAULT_PATH}/${USER}/${PROJECT_PATH}/${PROJECT_NAME}/requirements/
 
 # install mmlab stuff directly
 # (because of we need configs)
+# TODO: rm this and add to requirements
 RUN git clone https://github.com/open-mmlab/mmdetection.git ${DEFAULT_PATH}/${USER}/mmlab/mmdet \
     && cd ${DEFAULT_PATH}/${USER}/mmlab/mmdet \
     && pip install \

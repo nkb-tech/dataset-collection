@@ -9,17 +9,19 @@ export DOCKER_PROJECT_PATH
 export DOCKER_PROJECT_NAME
 export DOCKER_DEFAULT_PATH
 export DOCKER_CONTAINER_NAME
+export DEFAULT_DATA_PATH
+export DOCKER_DATA_PATH
 
-docker build . \
-    --file Dockerfile \
-    --tag ${DOCKER_IMAGE_NAME}/${DOCKER_IMAGE_VERSION} \
-    --build-arg UID=${DOCKER_UID} \
-    --build-arg GID=${DOCKER_UID} \
-    --build-arg PW=${DOCKER_USER_PASSWORD} \
-    --build-arg USER=${DOCKER_USER_NAME} \
-    --build-arg PROJECT_PATH=${DOCKER_PROJECT_PATH} \
-    --build-arg PROJECT_NAME=${DOCKER_PROJECT_NAME} \
-    --build-arg DEFAULT_PATH=${DOCKER_DEFAULT_PATH}
+# docker build . \
+#     --file docker/Dockerfile \
+#     --tag ${DOCKER_IMAGE_NAME}/${DOCKER_IMAGE_VERSION} \
+#     --build-arg UID=${DOCKER_UID} \
+#     --build-arg GID=${DOCKER_UID} \
+#     --build-arg PW=${DOCKER_USER_PASSWORD} \
+#     --build-arg USER=${DOCKER_USER_NAME} \
+#     --build-arg PROJECT_PATH=${DOCKER_PROJECT_PATH} \
+#     --build-arg PROJECT_NAME=${DOCKER_PROJECT_NAME} \
+#     --build-arg DEFAULT_PATH=${DOCKER_DEFAULT_PATH}
 
 docker run \
     -itd \
@@ -31,6 +33,7 @@ docker run \
     --env "QT_X11_NO_MITSHM=1" \
     --volume /tmp/.X11-unix:/tmp/.X11-unix:rw \
     --volume $PWD:${DOCKER_DEFAULT_PATH}/${DOCKER_USER_NAME}/${DOCKER_PROJECT_PATH}/${DOCKER_PROJECT_NAME}/:rw \
+    --volume ${DEFAULT_DATA_PATH}:${DOCKER_DEFAULT_PATH}/${DOCKER_USER_NAME}/${DOCKER_PROJECT_PATH}/${DOCKER_PROJECT_NAME}/${DOCKER_DATA_PATH}:rw \
     --privileged \
     ${DOCKER_IMAGE_NAME}/${DOCKER_IMAGE_VERSION}
 

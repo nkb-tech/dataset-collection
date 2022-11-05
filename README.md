@@ -1,11 +1,23 @@
 # dataset-collection
 Framework to collect dataset in COCO format for images/videos using pretrained neural networks.
 
-# Datasets Description
+# Table of contents
+1. [Introduction](#introduction)
+2. [Datasets Description](#paragraph1)
+    1. [Youtube VIS](#subparagraph1)
+    2. [MSCOCO](#subparagraph2)
+3. [How to run](#paragraph2)
+3. [Contribute](#paragraph3)
 
+## Introduction <a name="introduction"></a>
+Framework to collect dataset in COCO format for images/videos using pretrained neural networks.
+
+## Datasets Description <a name="paragraph1"></a>
+There are supported datasets.
+
+### Youtube VIS <a name="subparagraph1"></a>
 <details open>
-<summary href="https://youtube-vos.org/dataset/vis/">Youtube VIS</summary>
-```
+<summary href="https://youtube-vos.org/dataset/vis/">Annotation example</summary>
 {
     "videos" : [video],
     "annotations" : [annotation],
@@ -32,12 +44,11 @@ category{
     "name" : str,
     "supercategory" : str,
 }
-```
 </details>
 
+### MSCOCO <a name="subparagraph2"></a>
 <details open>
-<summary href="https://cocodataset.org/#format-data/">MSCOCO</summary>
-```
+<summary href="https://cocodataset.org/#format-data/">Annotation example</summary>
 {
     "images": [image],
     "annotations": [annotation],
@@ -63,10 +74,14 @@ category{
     "name": str,
     "supercategory": str,
 }
-```
 </details>
 
-## How to run
+## How to run <a name="paragraph2"></a>
+
+```bash
+git clone https://github.com/msb-tech/dataset-collection.git
+cd dataset-collection
+```
 
 Before running you should change the default values in `docker_names.sh`. After that type
 
@@ -82,7 +97,8 @@ To see help info about the script, type
 python3 main.py --help
 ```
 
-## Contribute
+## Contribute <a name="paragraph3"></a>
+
 ```bash
 pip install pre-commit
 pre-commit install

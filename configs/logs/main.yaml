@@ -1,0 +1,31 @@
+version: 1
+formatters:
+    simple_formatter:
+        class:   logging.Formatter
+        format:  "[%(asctime)s] %(name)s [%(levelname)s] %(message)s"
+        datefmt: "%Y-%m-%d %H:%M:%S"
+handlers:
+    file_handler:
+        class:     logging.FileHandler
+        filename:  logs/main.log
+        level:     DEBUG
+        formatter: simple_formatter
+    stream_handler:
+        class:    logging.StreamHandler
+        stream:    ext://sys.stderr
+        level:     WARNING
+        formatter: simple_formatter
+loggers:
+    __main__:
+        level:     DEBUG
+        handlers:  [file_handler]
+        propagate: True
+    entities.loader:
+        level:     DEBUG
+        handlers:  [file_handler]
+        propagate: True
+
+root:
+    level:    WARNING
+    handlers: [stream_handler]
+    

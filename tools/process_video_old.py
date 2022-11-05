@@ -8,7 +8,11 @@ import numpy as np
 import pycocotools.mask as mask_utils
 import tqdm
 import yaml
-from mmdet.apis import inference_detector, init_detector
+from mmdet.apis import (
+    inference_detector,
+    init_detector,
+    show_result_pyplot,
+)
 
 idx_category = {
     1: 'person',
@@ -92,20 +96,22 @@ idx_category = {
     89: 'hair drier',
     90: 'toothbrush'
 }
+
 category_mapping = {
     idx: category
     for idx, category in enumerate(idx_category.values())
 }
-idx_mapping = {category: idx for idx, category in category_mapping.items()}
-
+idx_mapping = {
+    category: idx
+    for idx, category in category_mapping.items()
+}
 
 def read_from_file(cfg_file: str, ) -> dict:
 
     with open(cfg_file, 'r') as f:
-        new_config = yaml.safe_load(f, Loader=yaml.FullLoader)
+        new_config = yaml.load(f, Loader=yaml.FullLoader)
 
     return new_config
-
 
 def select_instances(
     predicted_instances: tuple,
@@ -121,8 +127,13 @@ def select_instances(
     Selects target classes above threshold confidence
     from output mmdetection model
     """
-
-    bboxes, masks = predicted_instances['ins_results']
+    if isinstance(predicted_instances, dict):
+        if 'ins_results' in predicted_instances:
+            as_dict=True
+            bboxes, masks = predicted_instances['ins_results']
+    else:
+        as_dict=False
+        bboxes, masks = predicted_instances
 
     target_idxs = [
         idx_mappping[target_class] for target_class in target_classes
@@ -144,9 +155,12 @@ def select_instances(
         target_masks.append(np.array(filtered_masks))
 
     target_result = (target_bboxes, target_masks)
+    if as_dict:
+        predicted_instances['ins_results'] = target_result
+    else:
+        predicted_instances = target_result
 
     return target_result
-
 
 def get_indexes_lower_fps(
     num_frames: int,
@@ -177,14 +191,24 @@ def get_indexes_lower_fps(
     is_flag=True,
     help='Save images from video or not',
 )
+@click.option(
+    '--debug',
+    '-d',
+    default=False,
+    type=bool,
+    is_flag=True,
+    help='Draw predicted boxes on images or not',
+)
 def main(
     config_path: str,
     save_images: bool,
+    debug: bool,
 ) -> None:
 
     # read a config
     cfg = read_from_file(config_path)
-
+    if debug:
+        print(json.dumps(cfg, indent=4))
     # build the model
     model = init_detector(
         cfg['model']['mmconfig'],
@@ -234,11 +258,15 @@ def main(
     annotation_id = 0
     progress_bar = tqdm.tqdm(total=length)
 
-    dir_with_video_path = os.path.dirname(video_path)
+    os.makedirs(cfg['dataset']['output_path'], exist_ok=True)
 
     if save_images:
-        dir_with_images = os.path.join(dir_with_video_path, 'dataset')
+        dir_with_images = os.path.join(cfg['dataset']['output_path'], 'images')
         os.makedirs(dir_with_images, exist_ok=True)
+
+    if debug:
+        dir_with_debug_images = os.path.join(cfg['dataset']['output_path'], 'debug')
+        os.makedirs(dir_with_debug_images, exist_ok=True)
 
     not_error = True
 
@@ -284,12 +312,14 @@ def main(
 
         # for each image
         for i in range(cfg['model']['batch']):
-
+            #import ipdb; ipdb.set_trace()
             bboxs, masks = select_instances(
                 predicted_instances[i],
                 cfg['model']['target_classes'],
-                cfg['model']['confidence_treshold'],
+                cfg['model']['confidence_threshold'],
             )
+
+            predicted_instances[i] = bboxs, masks
 
             image_height, image_width, _ = buffer_batched_frames[i].shape
             output_image_path = os.path.abspath(
@@ -346,6 +376,14 @@ def main(
                 output_data['images'].append(image_info)
                 if save_images:
                     cv2.imwrite(output_image_path, original_frame)
+                if debug:
+                    show_result_pyplot(
+                        model=model,
+                        img=original_frame,
+                        result=predicted_instances[i],
+                        score_thr=cfg['model']['confidence_threshold'][0],
+                        out_file=os.path.join(dir_with_debug_images, f'{counter}.jpg'),
+                    )
 
             counter += 1
 
@@ -368,7 +406,7 @@ def main(
         else:
             key_frame = False
 
-    with open(os.path.join(dir_with_video_path, 'train.json'), 'w') as f:
+    with open(os.path.join(cfg['dataset']['output_path'], 'train.json'), 'w') as f:
         json.dump(output_data, f)
 
 
