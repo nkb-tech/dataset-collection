@@ -1,6 +1,6 @@
 click
 easydict
 numpy
-opencv-python-headless
+opencv-python-headless==4.4.0.44
 pycocotools
 tqdm

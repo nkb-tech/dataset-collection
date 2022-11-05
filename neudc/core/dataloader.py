@@ -76,6 +76,7 @@ class VideoDataloader(BaseDataloader):
                 if len(local_batch_idx) > 0:
                     yield local_batch_idx, self.dataset(local_batch_idx)
                 last_batch_idx = []
+                self.mask = [0] * self.batch_size
 
 
     def last_batch_info(self, mask: Union[list, np.ndarray]):
