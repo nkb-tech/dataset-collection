@@ -12,14 +12,16 @@ from mmcv import Config
 from mmcv.utils import get_logger
 from mmdet.utils import collect_env
 from mmdet.apis import (
-    inference_detector,
     init_detector,
-    show_result_pyplot,
     init_random_seed,
     set_random_seed,
 )
 
-from neudc.apis import 
+from neudc.apis import process_video
+from neudc.core.dataloader import VideoDataloader
+from neudc.core.dataset import VideoDataset
+from neudc.core.indexer import FPSIndexer
+from neudc.saver import COCOSaver
 
 
 @click.command()
@@ -99,6 +101,8 @@ def main(
     meta['seed'] = seed
     meta['exp_name'] = osp.basename(config_path)
 
+    ### MODEL PART
+
     # build the model
     model = init_detector(
         cfg.model.mmconfig,
@@ -111,7 +115,42 @@ def main(
 
     logger.info(f'Model:\n{model}')
 
-    
+    ### INDEXER PART
+
+    indexer = FPSIndexer(
+        video_path=cfg.dataset.input_path,
+        low_fps=cfg.dataset.frame_per_second,
+        high_fps_interval=cfg.dataset.high_fps_interval,
+    )
+
+    ### DATASET PART
+
+    dataset = VideoDataset(
+        video_path=cfg.dataset.input_path,
+        device='cpu:2',
+    )
+
+    ### SAVER PART
+
+    saver = COCOSaver(
+        output_path=cfg.dataset.output_path,
+        target_classes=cfg.model.target_classes,
+        threshold_confidences=cfg.model.confidence_threshold,
+        save_images=save_images,
+        debug=debug,
+        log_file=log_file,
+    )
+
+    process_video(
+        model=model,
+        dataloader=VideoDataloader(
+            indexer=indexer,
+            dataset=dataset,
+            batch_size=cfg.model.batch,
+        ),
+        saver=saver,
+        logger=logger,
+    )
 
 
 if __name__ == '__main__':

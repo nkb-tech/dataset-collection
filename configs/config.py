@@ -17,6 +17,7 @@ dataset = dict(
     input_path='/home/user/src/project/data/14.08/19.00_до_22.00/PVN_hd_ZAO_10297_1.mp4',
     output_path='data/custom_dataset',
     frame_per_second=1,
+    high_fps_interval=2,
     file_extensions=[
         'mp4',
         'mov',
