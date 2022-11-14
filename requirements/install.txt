@@ -6,3 +6,4 @@ pycocotools
 tqdm
 decord
 matplotlib
+mmdet
