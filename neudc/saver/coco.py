@@ -50,17 +50,18 @@ class BaseSaver(object):
             self.images_path = osp.join(output_path, 'images')
             os.makedirs(self.images_path, exist_ok=True)
 
-        if self.debug
+        if self.debug:
             self.debug_path = osp.join(output_path, 'debug')
             os.makedirs(self.debug_path, exist_ok=True)
 
         if isinstance(threshold_confidences, float):
             threshold_confidences = [threshold_confidences] * len(target_idxs)
 
-        assert len(threshold_confidences) == len(target_classes),
+        assert len(threshold_confidences) == len(target_classes), (
             f'Lengths should be the same, got for confs'
             f'{len(threshold_confidences)} and for classes'
-            f'{len(threshold_confidences)}.'
+            f'{len(target_classes)}.'
+        )
 
         self.threshold_confidences = threshold_confidences
         self.target_classes = target_classes
@@ -82,8 +83,8 @@ class BaseSaver(object):
         }
         # get indexes 
         self.target_idxs = [
-            idx_mapping[self.target_class]
-            for target_class in target_classes
+            idx_mapping[target_class]
+            for target_class in self.target_classes
         ]
 
         # logging
@@ -104,7 +105,7 @@ class COCOSaver(BaseSaver):
                  output_path: str,
                  target_classes: tp.List[str],
                  threshold_confidences: tp.List[float],
-                 all_classes_config: str = '../../configs/datasets/coco/id2class.yaml', #noqa
+                 all_classes_config: str = 'configs/datasets/coco/id2class.yaml', #noqa
                  save_images: bool = True,
                  debug: bool = True,
                  with_mask: bool = True,
@@ -125,7 +126,7 @@ class COCOSaver(BaseSaver):
             log_file (str): file path for saving logs
         '''
 
-        super(BaseSaver, self).__init__(output_path=output_path,
+        super(COCOSaver, self).__init__(output_path=output_path,
                                         all_classes_config=all_classes_config,
                                         save_images=save_images,
                                         debug=debug,
@@ -150,7 +151,7 @@ class COCOSaver(BaseSaver):
         }
 
         # fill out coco `categories` 
-        for i, target_class in enumerate(target_classes):
+        for i, target_class in enumerate(self.target_classes):
             category = {
                 'id': i + 1,
                 'name': target_class,
@@ -171,7 +172,12 @@ class COCOSaver(BaseSaver):
             # TODO `self.mmdet_field` can be not right
             # also output will depend on self.mmdet_field
             # tuple with different length
-            boxes, masks = preds[self.mmdet_field]
+            if isinstance(preds, tuple):
+                bboxes, masks = preds
+            elif isinstance(preds, dict):
+                bboxes, masks = preds[self.mmdet_field]
+            else:
+                raise NotImplementedError
 
             target_objects_on_frame = False
 
