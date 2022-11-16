@@ -3,21 +3,23 @@ import numpy as np
 from decord import VideoReader, cpu
 
 class BaseIndexer(metaclass=ABCMeta):
-    def __init__(self, 
-                 video_path: str,
+    def __init__(self,
                  low_fps: float,
                  high_fps_interval: float) -> None:
         '''
-        video_path: path to video
         low_fps: fps to use while looking through video
         high_fps_interval: interval in seconds to look around the frame, 
             where the target class was found.
         '''
-        self.video_path = video_path
         self.low_fps = low_fps
         self.high_fps_interval = high_fps_interval
         self.current_idx = 0
-        self.max_idx = 1000
+    
+    def set_video(self,
+                  max_idx: int,
+                  video_fps: float) -> None:
+        self.max_idx = max_idx
+        self.video_fps = video_fps
      
     @abstractmethod
     def idx_gen(self):
@@ -48,19 +50,20 @@ class FPSIndexer(BaseIndexer):
     Stable version
     '''
     def __init__(self,
-                 video_path: str,
                  low_fps: float,
                  high_fps_interval: float) -> None:
         '''
-        video_path: path to video
         low_fps: fps to use while looking through video
         high_fps_interval: interval in seconds to look around the frame, 
             where the target class was found.
         '''
-        super().__init__(video_path, low_fps, high_fps_interval)
-        self.video = VideoReader(video_path, ctx=cpu(0))
-        self.max_idx = len(self.video)
-        self.video_fps = self.video.get_avg_fps()
+        super().__init__(low_fps, high_fps_interval)
+
+    def set_video(self,
+                  max_idx: int,
+                  video_fps: float) -> None:
+        self.max_idx = max_idx
+        self.video_fps = video_fps
         self.idx_delta = self.video_fps / self.low_fps
         self.high_fps_idx_interval = int(self.video_fps * self.high_fps_interval)
     
@@ -96,4 +99,4 @@ class FPSIndexer(BaseIndexer):
         self.current_idx = int(self.current_idx_float)
         self.processed_idx.update(lst)
         return lst
-        
+

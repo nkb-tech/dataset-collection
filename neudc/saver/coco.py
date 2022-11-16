@@ -93,6 +93,9 @@ class BaseSaver(object):
             log_level=logging.INFO,
         )
 
+    def clear_database(self) -> None:
+        pass
+
     def __call__(self,
                  *args,
                  **kwargs) -> tp.List[bool]:
@@ -139,6 +142,10 @@ class COCOSaver(BaseSaver):
         # TODO check for different models if preds have this field    
         self.mmdet_field = 'ins_results' if with_mask else 'results'
 
+        self.clear_database()
+
+    def clear_database(self) -> None:
+
         # coco-based indexers
         self.annotation_id = 0
         self.image_id = 0
@@ -150,7 +157,7 @@ class COCOSaver(BaseSaver):
             'categories': [],
         }
 
-        # fill out coco `categories` 
+        # fill out coco `categories`
         for i, target_class in enumerate(self.target_classes):
             category = {
                 'id': i + 1,
@@ -290,7 +297,12 @@ class COCOSaver(BaseSaver):
 
         return batch_filter_mask
 
-    def dump(self, filename='database.json') -> None:
+    def dump(self, filename: str='database.json') -> None:
+
+        root, ext = osp.splitext(filename)
+
+        if ext != '.json':
+            filename = f'{root}.{json}'
 
         database_path = osp.join(self.output_path, filename)
 

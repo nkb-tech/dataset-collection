@@ -17,12 +17,12 @@ from mmdet.apis import (
     set_random_seed,
 )
 
-from neudc.apis import process_video
+from neudc.apis import process_videos
 from neudc.core.dataloader import VideoDataloader
 from neudc.core.dataset import VideoDataset
 from neudc.core.indexer import FPSIndexer
 from neudc.saver import COCOSaver
-
+from neudc.io import find_files
 
 @click.command()
 @click.option(
@@ -115,19 +115,19 @@ def main(
 
     logger.info(f'Model:\n{model}')
 
+    files_to_process = find_files(
+        file_or_dir=cfg.dataset.input_path,
+        extensions=cfg.dataset.file_extensions,
+        recursive=cfg.dataset.recursive,
+    )
+
+    logger.info(f'Have found {len(files_to_process)} files to process.')
+
     ### INDEXER PART
 
     indexer = FPSIndexer(
-        video_path=cfg.dataset.input_path,
         low_fps=cfg.dataset.frame_per_second,
         high_fps_interval=cfg.dataset.high_fps_interval,
-    )
-
-    ### DATASET PART
-
-    dataset = VideoDataset(
-        video_path=cfg.dataset.input_path,
-        device='cpu:2',
     )
 
     ### SAVER PART
@@ -141,17 +141,17 @@ def main(
         log_file=log_file,
     )
 
-    process_video(
+    process_videos(
+        files=files_to_process,
         model=model,
-        dataloader=VideoDataloader(
-            indexer=indexer,
-            dataset=dataset,
-            batch_size=cfg.model.batch,
-        ),
+        batch_size=cfg.model.batch_size,
+        indexer=indexer,
         saver=saver,
-        logger=logger,
+        log_file=log_file,
+        device='cpu:2',
     )
 
 
 if __name__ == '__main__':
     main()
+

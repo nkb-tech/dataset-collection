@@ -84,4 +84,4 @@ class VideoDataloader(BaseDataloader):
         mask: boolean/[0,1] mask of targetr object presence indicators in the last batch
         '''
         self.mask = mask
-        
+

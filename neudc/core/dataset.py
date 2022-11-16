@@ -37,6 +37,7 @@ class VideoDataset(BaseDataset):
             raise ValueError(f'Unknown device type: {device}')
         self.video = VideoReader(video_path, ctx=decord_device)
         self.max_idx = len(self.video)
+        self.video_fps = self.video.get_avg_fps()
     
     def __call__(self, idx: Union[int, list]) -> Union[np.ndarray, torch.tensor]:
         if type(idx) is list:
