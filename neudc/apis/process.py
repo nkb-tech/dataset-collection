@@ -51,7 +51,7 @@ def process_videos(files: tp.List[str],
         # set indexer
         indexer.set_video(max_idx=dataset.max_idx, video_fps=dataset.video_fps)
         # set saver
-        saver.clear_database()
+        saver.set_video(osp.basename(file_path))
         # set dataloader
         dataloader = VideoDataloader(indexer=indexer,
                                      dataset=dataset,
@@ -68,7 +68,7 @@ def process_videos(files: tp.List[str],
                       saver=saver,
                       log_file=log_file)
 
-        saver.dump(osp.basename(file_path))
+        saver.dump()
 
     logger.info(f'Tasks {num_files}/{num_files} have done.')
 

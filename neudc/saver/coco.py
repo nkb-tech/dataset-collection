@@ -45,14 +45,6 @@ class BaseSaver(object):
         self.save_images = save_images
         self.save_as = save_as
 
-        if self.save_images:
-            self.images_path = osp.join(output_path, 'images')
-            os.makedirs(self.images_path, exist_ok=True)
-
-        if self.debug:
-            self.debug_path = osp.join(output_path, 'debug')
-            os.makedirs(self.debug_path, exist_ok=True)
-
         if isinstance(threshold_confidences, float):
             threshold_confidences = [threshold_confidences] * len(
                 target_classes)  # noqa
@@ -93,6 +85,21 @@ class BaseSaver(object):
 
     def clear_database(self) -> None:
         pass
+
+    def set_video(self, filename: str) -> None:
+        self.clear_database()
+
+        root, ext = osp.splitext(filename)
+
+        self.output_path = osp.join(self.output_path, root)
+        
+        if self.save_images:
+            self.images_path = osp.join(self.output_path, 'images')
+            os.makedirs(self.images_path, exist_ok=True)
+
+        if self.debug:
+            self.debug_path = osp.join(self.output_path, 'debug')
+            os.makedirs(self.debug_path, exist_ok=True)
 
     def __call__(self, *args, **kwargs) -> tp.List[bool]:
 
