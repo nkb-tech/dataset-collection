@@ -28,4 +28,3 @@ loggers:
 root:
     level:    WARNING
     handlers: [stream_handler]
-    

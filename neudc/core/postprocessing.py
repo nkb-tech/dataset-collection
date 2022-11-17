@@ -1,5 +1,7 @@
+from typing import Dict, List, Tuple
+
 import torch
-from typing import Tuple, List, Dict
+
 
 def select_instances(
     predicted_instances: Tuple[torch.Tensor],
@@ -20,15 +22,14 @@ def select_instances(
         threshold_confidences (List[float]):
         idx_mapping (Dict[int, str]):
     Returns:
-        Tuple[Tensor]: 
+        Tuple[Tensor]:
     '''
 
     # TODO ins_results can be only in segmentator models
     bboxes, masks = predicted_instances['ins_results']
 
     target_idxs = [
-        idx_mapping[target_class]
-        for target_class in target_classes
+        idx_mapping[target_class] for target_class in target_classes
     ]
     if isinstance(threshold_confidences, float):
         threshold_confidences = [threshold_confidences] * len(target_idxs)

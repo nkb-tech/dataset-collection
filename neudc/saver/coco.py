@@ -1,20 +1,20 @@
-import os
-import cv2
-import yaml
 import json
 import logging
-import torch
-import mmcv
-import numpy as np
+import os
 import os.path as osp
 import typing as tp
+
+import cv2
+import mmcv
+import numpy as np
 import pycocotools.mask as mask_utils
-from mmdet.utils import get_root_logger
+import torch
+import yaml
 from mmdet.core.visualization import imshow_det_bboxes
+from mmdet.utils import get_root_logger
 
 
 class BaseSaver(object):
-    
     def __init__(self,
                  output_path: str,
                  all_classes_config: str,
@@ -24,7 +24,6 @@ class BaseSaver(object):
                  debug: bool = True,
                  save_as: str = 'jpg',
                  log_file: str = None) -> None:
-
         '''
         Saver for COCO dataset.
         Args:
@@ -33,14 +32,14 @@ class BaseSaver(object):
                 config
             save_images (bool): save pure images or not
             debug (bool): save or not prediction results
-            target_classes (list[str]): names of target 
+            target_classes (list[str]): names of target
                 classes.
-            threshold_confidences (list[str]): 
+            threshold_confidences (list[str]):
                 confidences for each class or one for all
             save_as (str): save data format
             log_file (str): file path for saving logs
         '''
-        
+
         self.output_path = output_path
         self.debug = debug
         self.save_images = save_images
@@ -55,19 +54,19 @@ class BaseSaver(object):
             os.makedirs(self.debug_path, exist_ok=True)
 
         if isinstance(threshold_confidences, float):
-            threshold_confidences = [threshold_confidences] * len(target_idxs)
+            threshold_confidences = [threshold_confidences] * len(
+                target_classes)  # noqa
 
         assert len(threshold_confidences) == len(target_classes), (
             f'Lengths should be the same, got for confs'
             f'{len(threshold_confidences)} and for classes'
-            f'{len(target_classes)}.'
-        )
+            f'{len(target_classes)}.')
 
         self.threshold_confidences = threshold_confidences
         self.target_classes = target_classes
 
         with open(all_classes_config, 'r') as file:
-             all_classes = yaml.safe_load(file)
+            all_classes = yaml.safe_load(file)
 
         # TODO maybe it is not needed :)
         # class mapping
@@ -81,10 +80,9 @@ class BaseSaver(object):
             category: idx
             for idx, category in category_mapping.items()
         }
-        # get indexes 
+        # get indexes
         self.target_idxs = [
-            idx_mapping[target_class]
-            for target_class in self.target_classes
+            idx_mapping[target_class] for target_class in self.target_classes
         ]
 
         # logging
@@ -96,24 +94,23 @@ class BaseSaver(object):
     def clear_database(self) -> None:
         pass
 
-    def __call__(self,
-                 *args,
-                 **kwargs) -> tp.List[bool]:
+    def __call__(self, *args, **kwargs) -> tp.List[bool]:
 
         pass
 
+
 class COCOSaver(BaseSaver):
-
-    def __init__(self,
-                 output_path: str,
-                 target_classes: tp.List[str],
-                 threshold_confidences: tp.List[float],
-                 all_classes_config: str = 'configs/datasets/coco/id2class.yaml', #noqa
-                 save_images: bool = True,
-                 debug: bool = True,
-                 with_mask: bool = True,
-                 log_file: str = None) -> None:
-
+    def __init__(
+            self,
+            output_path: str,
+            target_classes: tp.List[str],
+            threshold_confidences: tp.List[float],
+            all_classes_config:
+        str = 'configs/datasets/coco/id2class.yaml',  # noqa
+            save_images: bool = True,
+            debug: bool = True,
+            with_mask: bool = True,
+            log_file: str = None) -> None:
         '''
         Saver for COCO dataset.
         Args:
@@ -124,22 +121,23 @@ class COCOSaver(BaseSaver):
             debug (bool): save or not prediction results
             with_mask (bool): using instance mask or not
             target_classes (list[str]): names of target classes
-            threshold_confidences (list[str]): 
+            threshold_confidences (list[str]):
                 confidences for each class or one for all
             log_file (str): file path for saving logs
         '''
 
-        super(COCOSaver, self).__init__(output_path=output_path,
-                                        all_classes_config=all_classes_config,
-                                        save_images=save_images,
-                                        debug=debug,
-                                        target_classes=target_classes,
-                                        threshold_confidences=threshold_confidences,
-                                        log_file=log_file)
+        super(COCOSaver,
+              self).__init__(output_path=output_path,
+                             all_classes_config=all_classes_config,
+                             save_images=save_images,
+                             debug=debug,
+                             target_classes=target_classes,
+                             threshold_confidences=threshold_confidences,
+                             log_file=log_file)
 
         assert with_mask, 'Now only with_mask=True supported.'
 
-        # TODO check for different models if preds have this field    
+        # TODO check for different models if preds have this field
         self.mmdet_field = 'ins_results' if with_mask else 'results'
 
         self.clear_database()
@@ -165,16 +163,16 @@ class COCOSaver(BaseSaver):
                 'supercategory': target_class,
             }
             self.database['categories'].append(category)
-            
-    def __call__(self,
-                 batch_frames: tp.List[torch.Tensor],
+
+    def __call__(self, batch_frames: tp.List[torch.Tensor],
                  batch_preds: tp.List[tp.Dict[str, torch.Tensor]],
                  batch_idxs: int) -> tp.List[bool]:
 
         batch_filter_mask = []
-        
-        # interate over frames
-        for frame_idx, preds, frame in zip(batch_idxs, batch_preds, batch_frames):
+
+        # iterate over frames
+        for frame_idx, preds, frame in zip(batch_idxs, batch_preds,
+                                           batch_frames):
 
             # TODO `self.mmdet_field` can be not right
             # also output will depend on self.mmdet_field
@@ -192,7 +190,7 @@ class COCOSaver(BaseSaver):
             output_image_path = f'{frame_idx}.{self.save_as}'
 
             image_info = {
-                'id': frame_idx,
+                'id': int(frame_idx),
                 'width': image_width,
                 'height': image_height,
                 'file_name': output_image_path,
@@ -204,7 +202,7 @@ class COCOSaver(BaseSaver):
 
             # iterate over all target classes
             for j, (target_idx, target_treshold_confidence) in enumerate(
-                zip(self.target_idxs, self.threshold_confidences)):
+                    zip(self.target_idxs, self.threshold_confidences)):
 
                 filtered_bboxes, filtered_masks = [], []
 
@@ -216,11 +214,11 @@ class COCOSaver(BaseSaver):
                     x_l, y_l, x_r, y_r, sc = bbox
                     if sc < target_treshold_confidence:
                         continue
-                    
+
                     filtered_bboxes.append(bbox)
                     filtered_masks.append(mask)
                     target_objects_on_frame = True
-        
+
                     x = (x_r + x_l) / 2
                     y = (y_r + y_l) / 2
                     bbox_width = x_r - x_l
@@ -233,20 +231,20 @@ class COCOSaver(BaseSaver):
 
                     annotation = {
                         'id': self.annotation_id,
-                        'image_id': frame_idx,
+                        'image_id': int(frame_idx),
                         'class_id': j + 1,
                         'iscrowd': 0,
-                        'area': mask_area,
-                        'bbox': [int(x),
-                                 int(y),
-                                 int(bbox_width),
-                                 int(bbox_height)],
+                        'area': int(mask_area),
+                        'bbox':
+                        [int(x),
+                         int(y),
+                         int(bbox_width),
+                         int(bbox_height)],
                         'segmentation': {
                             'size':
-                                rle_encoded['size'],
+                            rle_encoded['size'],
                             'counts':
-                                rle_encoded['counts'].decode(
-                                    encoding='UTF-8'),
+                            rle_encoded['counts'].decode(encoding='UTF-8'),
                         },
                     }
                     self.annotation_id += 1
@@ -254,7 +252,7 @@ class COCOSaver(BaseSaver):
 
                 target_bboxes.append(np.array(filtered_bboxes))
                 target_masks.append(np.array(filtered_masks))
-            
+
             if target_objects_on_frame:
 
                 self.database['images'].append(image_info)
@@ -266,18 +264,20 @@ class COCOSaver(BaseSaver):
                         img=frame,
                     )
                     if not result:
-                        self.logger.info(
+                        self.logger.error(
                             f'Frame {frame_idx} was not saved to {filename}')
-                
+
                 if self.debug:
-                    target_labels = np.concatenate([
+                    bboxes = np.vstack(target_bboxes)
+                    labels = np.concatenate([
                         np.full(bbox.shape[0], i, dtype=np.int32)
                         for i, bbox in enumerate(target_bboxes)
                     ])
 
                     segms = mmcv.concat_list(target_masks)
                     if isinstance(segms[0], torch.Tensor):
-                        segms = torch.stack(segms, dim=0).detach().cpu().numpy()
+                        segms = torch.stack(segms,
+                                            dim=0).detach().cpu().numpy()
                     else:
                         segms = np.stack(segms, axis=0)
 
@@ -285,8 +285,8 @@ class COCOSaver(BaseSaver):
 
                     imshow_det_bboxes(
                         img=frame,
-                        bboxes=target_bboxes,
-                        labels=target_labels,
+                        bboxes=bboxes,
+                        labels=labels,
                         segms=segms,
                         class_names=self.target_classes,
                         show=False,
@@ -297,19 +297,16 @@ class COCOSaver(BaseSaver):
 
         return batch_filter_mask
 
-    def dump(self, filename: str='database.json') -> None:
+    def dump(self, filename: str = 'database.json') -> None:
 
         root, ext = osp.splitext(filename)
 
         if ext != '.json':
-            filename = f'{root}.{json}'
+            filename = f'{root}.json'
 
         database_path = osp.join(self.output_path, filename)
 
         with open(database_path, 'w') as file:
             json.dump(self.database, file)
 
-        self.logger.info(
-            f'COCO-like database was written to {database_path}')
-
-        
+        self.logger.info(f'COCO-like database was written to {database_path}')
