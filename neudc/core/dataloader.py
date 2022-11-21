@@ -3,7 +3,6 @@ from queue import Queue
 from typing import Union
 
 import numpy as np
-import torch
 
 from .dataset import BaseDataset
 from .indexer import BaseIndexer
@@ -32,7 +31,8 @@ class BaseDataloader(metaclass=ABCMeta):
     @abstractmethod
     def last_batch_info(self, mask: Union[list, np.ndarray]):
         '''
-        mask: boolean/[0,1] mask of targetr object presence indicators in the last batch
+        mask: boolean/[0,1] mask of targetr
+        object presence indicators in the last batch
         '''
         pass
 
@@ -61,8 +61,7 @@ class VideoDataloader(BaseDataloader):
             if len(last_batch_idx) == self.batch_size:
                 yield last_batch_idx, self.dataset(last_batch_idx)
                 idx_with_target = [
-                    j for j, indicator in zip(last_batch_idx, self.mask)
-                    if indicator == True
+                    j for j, idc in zip(last_batch_idx, self.mask) if idc
                 ]
                 q = Queue(maxsize=self.indexer.high_fps_idx_interval * 2 *
                           self.batch_size)
@@ -80,9 +79,12 @@ class VideoDataloader(BaseDataloader):
                     yield local_batch_idx, self.dataset(local_batch_idx)
                 last_batch_idx = []
                 self.mask = [0] * self.batch_size
+        if len(last_batch_idx) > 0:
+            yield last_batch_idx, self.dataset(last_batch_idx)
 
     def last_batch_info(self, mask: Union[list, np.ndarray]):
         '''
-        mask: boolean/[0,1] mask of targetr object presence indicators in the last batch
+        mask: boolean/[0,1] mask of target
+        object presence indicators in the last batch
         '''
         self.mask = mask
