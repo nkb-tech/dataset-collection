@@ -2,29 +2,29 @@ import logging
 import os.path as osp
 import typing as tp
 
-import numpy as np
 import torch
 import torch.nn as nn
 from mmdet.apis import inference_detector
 from mmdet.utils import get_root_logger
 
 from neudc.core.dataloader import BaseDataloader, VideoDataloader
-from neudc.core.dataset import BaseDataset, VideoDataset
+from neudc.core.dataset import CV2VideoDataset
 from neudc.core.indexer import BaseIndexer
 from neudc.saver import COCOSaver
 
+# from neudc.core.preprocessing import OpticalUndistortion
 
-def _collate(batch_frames: np.ndarray) -> tp.List[np.ndarray]:
-    if batch_frames.ndim == 4:
-        output = [frame for frame in batch_frames]
-    elif batch_frames.ndim == 3:
-        output = [
-            frame,
-        ]
-    else:
-        raise NotImplementedError
+# def _collate(batch_frames: np.ndarray) -> tp.List[np.ndarray]:
+#     if batch_frames.ndim == 4:
+#         output = [frame for frame in batch_frames]
+#     elif batch_frames.ndim == 3:
+#         output = [
+#             frame,
+#         ]
+#     else:
+#         raise NotImplementedError
 
-    return output
+#     return output
 
 
 def process_videos(files: tp.List[str],
@@ -45,9 +45,13 @@ def process_videos(files: tp.List[str],
         file_path = files[i]
         logger.info(f'{i}/{num_files}: {file_path}')
 
-        dataset = VideoDataset(video_path=file_path,
-                               device=device,
-                               num_threads=num_threads)
+        # preproc = \
+        # OpticalUndistortion('configs/cam_mtx/cam_mat_PVN_hd_ZAO_10297_2.npy',
+        # 'configs/cam_mtx/cam_dist_PVN_hd_ZAO_10297_2.npy')
+        dataset = CV2VideoDataset(video_path=file_path,
+                                  device=device,
+                                  num_threads=num_threads)
+        #   preprocessing=preproc)
         # set indexer
         indexer.set_video(max_idx=dataset.max_idx, video_fps=dataset.video_fps)
         # set saver
@@ -83,7 +87,7 @@ def process_video(model: nn.Module,
     # for each image in buffer
     # dataloader has no len
     for batch_idxs, batch_frames in dataloader.get_gen():
-        batch_frames = _collate(batch_frames)
+        # batch_frames = _collate(batch_frames)
         # call forward
         batch_preds = inference_detector(model, batch_frames)
         # filter predictions and save
@@ -91,5 +95,6 @@ def process_video(model: nn.Module,
         # update dataloader mask
         dataloader.last_batch_info(batch_filter_mask)
         # TODO write more understandable stats
-        logger.info(f'Process {min(batch_idxs)}/{dataloader.dataset.max_idx}, '
+        logger.info(f'Process {batch_idxs}/{dataloader.dataset.max_idx}, '
+                    f'{max(batch_idxs)/dataloader.dataset.max_idx*100:2.1f}%, '
                     f'found {sum(batch_filter_mask)} objects.')

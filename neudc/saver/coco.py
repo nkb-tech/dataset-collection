@@ -40,7 +40,7 @@ class BaseSaver(object):
             log_file (str): file path for saving logs
         '''
 
-        self.output_path = output_path
+        self.base_output_path = output_path
         self.debug = debug
         self.save_images = save_images
         self.save_as = save_as
@@ -91,8 +91,8 @@ class BaseSaver(object):
 
         root, ext = osp.splitext(filename)
 
-        self.output_path = osp.join(self.output_path, root)
-        
+        self.output_path = osp.join(self.base_output_path, root)
+
         if self.save_images:
             self.images_path = osp.join(self.output_path, 'images')
             os.makedirs(self.images_path, exist_ok=True)

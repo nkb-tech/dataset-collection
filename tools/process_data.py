@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import os
 import os.path as osp
 import time
 
@@ -13,8 +12,8 @@ from mmdet.apis import init_detector, init_random_seed, set_random_seed
 from mmdet.utils import collect_env
 
 from neudc.apis import process_videos
-from neudc.core.dataloader import VideoDataloader
-from neudc.core.dataset import VideoDataset
+# from neudc.core.dataloader import VideoDataloader
+# from neudc.core.dataset import CV2VideoDataset
 from neudc.core.indexer import FPSIndexer
 from neudc.io import find_files
 from neudc.saver import COCOSaver
@@ -58,8 +57,8 @@ def main(
         torch.backends.cudnn.benchmark = True
 
     # init distributed env first, since logger depends on the dist info.
-    if cfg.get('launcher', None) is None:
-        distributed = False
+    # if cfg.get('launcher', None) is None:
+    #     distributed = False
 
     # create work_dir
     mmcv.mkdir_or_exist(osp.abspath(cfg.dataset.output_path))
@@ -97,7 +96,7 @@ def main(
     meta['seed'] = seed
     meta['exp_name'] = osp.basename(config_path)
 
-    ### MODEL PART
+    # MODEL PART
 
     # build the model
     model = init_detector(
@@ -119,14 +118,14 @@ def main(
 
     logger.info(f'Have found {len(files_to_process)} files to process.')
 
-    ### INDEXER PART
+    # INDEXER PART
 
     indexer = FPSIndexer(
         low_fps=cfg.dataset.frame_per_second,
         high_fps_interval=cfg.dataset.high_fps_interval,
     )
 
-    ### SAVER PART
+    # SAVER PART
 
     saver = COCOSaver(
         output_path=cfg.dataset.output_path,
