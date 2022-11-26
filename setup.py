@@ -113,8 +113,9 @@ if __name__ == '__main__':
     setup(
         name='neudc',
         version=get_version(version_file),
-        description=
-        'Framework to collect dataset in COCO format for images/videos using pretrained neural networks',
+        description=('Framework to collect dataset'
+                     ' in COCO format for images/videos'
+                     ' using pretrained neural networks'),
         long_description=get_readme(readme_file),
         long_description_content_type='text/markdown',
         author='MSB tech',

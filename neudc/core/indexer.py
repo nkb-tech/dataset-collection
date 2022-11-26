@@ -1,7 +1,6 @@
 from abc import ABCMeta, abstractmethod
 
 import numpy as np
-from decord import VideoReader, cpu
 
 
 class BaseIndexer(metaclass=ABCMeta):
@@ -35,7 +34,8 @@ class BaseIndexer(metaclass=ABCMeta):
     @abstractmethod
     def get_idx_around_target(self, idx):
         '''
-        Generates idx list with video fps around the frame with target object in high_fps_interval.
+        Generates idx list with video fps around the frame
+        with target object in high_fps_interval.
         Changes self.current_idx not to reprocess same idx again.
         '''
         lst = np.arange(idx - 10, idx + 10, 1)
@@ -84,16 +84,19 @@ class FPSIndexer(BaseIndexer):
 
     def get_idx_around_target(self, idx):
         '''
-        Generates idx list with video fps around the frame with target object in high_fps_interval.
+        Generates idx list with video fps around the frame
+        with target object in high_fps_interval.
         Changes self.current_idx not to reprocess same idx again.
         '''
         min_border = max(0, int(idx - self.high_fps_idx_interval))
         max_border = min(int(idx + self.high_fps_idx_interval), self.max_idx)
-        lst = np.asarray([
-            i for i in range(min_border, max_border, 1)
-            if i not in self.processed_idx
-        ],
-                         dtype=int)
+        lst = np.asarray(
+            a=[
+                i for i in range(min_border, max_border, 1)
+                if i not in self.processed_idx
+            ],
+            dtype=int,
+        )
         self.current_idx_float = max(max_border, self.current_idx_float)
         self.current_idx = int(self.current_idx_float)
         self.processed_idx.update(lst)
