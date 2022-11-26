@@ -1,25 +1,22 @@
 #!/usr/bin/env python
 
-import os
 import os.path as osp
 import time
-import torch
 
 import click
 import mmcv
-
+import torch
 from mmcv import Config
 from mmcv.utils import get_logger
+from mmdet.apis import init_detector, init_random_seed, set_random_seed
 from mmdet.utils import collect_env
-from mmdet.apis import (
-    inference_detector,
-    init_detector,
-    show_result_pyplot,
-    init_random_seed,
-    set_random_seed,
-)
 
-from neudc.apis import 
+from neudc.apis import process_videos
+# from neudc.core.dataloader import VideoDataloader
+# from neudc.core.dataset import CV2VideoDataset
+from neudc.core.indexer import FPSIndexer
+from neudc.io import find_files
+from neudc.saver import COCOSaver
 
 
 @click.command()
@@ -60,9 +57,9 @@ def main(
         torch.backends.cudnn.benchmark = True
 
     # init distributed env first, since logger depends on the dist info.
-    if cfg.get('launcher', None) is None:
-        distributed = False
-    
+    # if cfg.get('launcher', None) is None:
+    #     distributed = False
+
     # create work_dir
     mmcv.mkdir_or_exist(osp.abspath(cfg.dataset.output_path))
     # dump config
@@ -99,6 +96,8 @@ def main(
     meta['seed'] = seed
     meta['exp_name'] = osp.basename(config_path)
 
+    # MODEL PART
+
     # build the model
     model = init_detector(
         cfg.model.mmconfig,
@@ -111,7 +110,42 @@ def main(
 
     logger.info(f'Model:\n{model}')
 
-    
+    files_to_process = find_files(
+        file_or_dir=cfg.dataset.input_path,
+        extensions=cfg.dataset.file_extensions,
+        recursive=cfg.dataset.recursive,
+    )
+
+    logger.info(f'Have found {len(files_to_process)} files to process.')
+
+    # INDEXER PART
+
+    indexer = FPSIndexer(
+        low_fps=cfg.dataset.frame_per_second,
+        high_fps_interval=cfg.dataset.high_fps_interval,
+    )
+
+    # SAVER PART
+
+    saver = COCOSaver(
+        output_path=cfg.dataset.output_path,
+        target_classes=cfg.model.target_classes,
+        threshold_confidences=cfg.model.confidence_threshold,
+        save_images=save_images,
+        debug=debug,
+        log_file=log_file,
+    )
+
+    process_videos(
+        files=files_to_process,
+        model=model,
+        batch_size=cfg.model.batch_size,
+        indexer=indexer,
+        saver=saver,
+        log_file=log_file,
+        device='cpu:2',
+        num_threads=cfg.dataset.num_threads,
+    )
 
 
 if __name__ == '__main__':

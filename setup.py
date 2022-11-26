@@ -1,29 +1,29 @@
 #!/usr/bin/env python
 
-import os
 import typing as tp
-from setuptools import (
-    find_packages,
-    setup,
-)
+
+from setuptools import find_packages, setup
 
 version_file = 'neudc/version.py'
 readme_file = 'README.md'
 requirement_file = 'requirements.txt'
+
 
 def get_readme(readme_file: str) -> str:
     with open(readme_file, encoding='utf-8') as f:
         content = f.read()
     return content
 
+
 def get_version(version_file: str) -> str:
     with open(version_file, 'r') as f:
         exec(compile(f.read(), version_file, 'exec'))
     return locals()['__version__']
 
+
 def parse_requirements(
-    fname: str='requirements.txt',
-    with_version: bool=True,
+    fname: str = 'requirements.txt',
+    with_version: bool = True,
 ) -> tp.List[str]:
     '''Parse the package dependencies listed in a requirements file but strips
     specific versioning information.
@@ -52,9 +52,11 @@ def parse_requirements(
             if line.startswith(('-e ', '--editable ')):
                 info['package'] = line.split('#egg=')[1]
             elif line.startswith((
-                '-f ', '--find-links ',
-                '--extra-index-url ',
-                '-i ', '--index-url ',
+                    '-f ',
+                    '--find-links ',
+                    '--extra-index-url ',
+                    '-i ',
+                    '--index-url ',
             )):
                 pass
             elif '@git+' in line:
@@ -106,11 +108,14 @@ def parse_requirements(
     packages = list(gen_packages_items())
     return packages
 
+
 if __name__ == '__main__':
     setup(
         name='neudc',
         version=get_version(version_file),
-        description='Framework to collect dataset in COCO format for images/videos using pretrained neural networks',
+        description=('Framework to collect dataset'
+                     ' in COCO format for images/videos'
+                     ' using pretrained neural networks'),
         long_description=get_readme(readme_file),
         long_description_content_type='text/markdown',
         author='MSB tech',
