@@ -45,6 +45,8 @@ RUN useradd -m ${USER} --uid=${UID} \
     && adduser ${USER} sudo \
     && usermod -a -G sudo ${USER}
 
+USER ${UID}:${GID}
+
 RUN mkdir -p ${DEFAULT_PATH}/${USER}/${PROJECT_PATH}/ \
     && chown -R ${UID}:${GID} ./
 

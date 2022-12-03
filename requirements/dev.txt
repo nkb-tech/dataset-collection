@@ -2,3 +2,6 @@ ipywidgets
 packaging
 setuptools
 wheel
+jupyterlab
+ipdb
+cython

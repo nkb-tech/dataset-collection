@@ -28,7 +28,3 @@ repos:
     rev: v2.1.0
     hooks:
       - id: codespell
-  - repo: https://github.com/petalmd/dockerfile-pre-commit.git
-    rev: v1.0
-    hooks:
-      - id: dockerlint
