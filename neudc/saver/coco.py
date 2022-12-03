@@ -226,8 +226,6 @@ class COCOSaver(BaseSaver):
                     filtered_masks.append(mask)
                     target_objects_on_frame = True
 
-                    x = (x_r + x_l) / 2
-                    y = (y_r + y_l) / 2
                     bbox_width = x_r - x_l
                     bbox_height = y_r - y_l
 
@@ -239,12 +237,12 @@ class COCOSaver(BaseSaver):
                     annotation = {
                         'id': self.annotation_id,
                         'image_id': int(frame_idx),
-                        'class_id': j + 1,
+                        'category_id': j + 1,
                         'iscrowd': 0,
                         'area': int(mask_area),
                         'bbox':
-                        [int(x),
-                         int(y),
+                        [int(x_l),
+                         int(y_l),
                          int(bbox_width),
                          int(bbox_height)],
                         'segmentation': {
