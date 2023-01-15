@@ -32,9 +32,7 @@ def process_videos(files: tp.List[str],
                    batch_size: int,
                    indexer: BaseIndexer,
                    saver: COCOSaver,
-                   log_file: str = None,
-                   device: str = 'cpu:2',
-                   num_threads: int = 0) -> None:
+                   log_file: str = None) -> None:
 
     logger = get_root_logger(log_file=log_file, log_level=logging.INFO)
 
@@ -48,9 +46,7 @@ def process_videos(files: tp.List[str],
         # preproc = \
         # OpticalUndistortion('configs/cam_mtx/cam_mat_PVN_hd_ZAO_10297_2.npy',
         # 'configs/cam_mtx/cam_dist_PVN_hd_ZAO_10297_2.npy')
-        dataset = CV2VideoDataset(video_path=file_path,
-                                  device=device,
-                                  num_threads=num_threads)
+        dataset = CV2VideoDataset(video_path=file_path)
         #   preprocessing=preproc)
         # set indexer
         indexer.set_video(max_idx=dataset.max_idx, video_fps=dataset.video_fps)
@@ -61,11 +57,11 @@ def process_videos(files: tp.List[str],
                                      dataset=dataset,
                                      batch_size=batch_size)
 
-        # clear cuda cache
-        if isinstance(device, torch.device) and \
-           device.type == 'cuda' and \
-           torch.cuda.is_available():
-            torch.cuda.empty_cache()
+        # # clear cuda cache
+        # if isinstance(device, torch.device) and \
+        #    device.type == 'cuda' and \
+        #    torch.cuda.is_available():
+        #     torch.cuda.empty_cache()
 
         process_video(model=model,
                       dataloader=dataloader,

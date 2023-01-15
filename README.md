@@ -88,13 +88,13 @@ Before running you should change the default values in `docker_names.sh`. After 
 ```bash
 source docker/docker_names.sh
 bash docker/build+run.sh
-python3 main.py -c config.yaml -s
+python3 tools/process_data.py -c config.py -s
 ```
 
 To see help info about the script, type
 
 ```bash
-python3 main.py --help
+python3 tools/process_data.py --help
 ```
 
 ## Contribute <a name="paragraph3"></a>

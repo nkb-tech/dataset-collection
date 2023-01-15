@@ -10,11 +10,9 @@ from decord import VideoReader, cpu, gpu
 class BaseDataset(metaclass=ABCMeta):
     def __init__(self,
                  video_path: str,
-                 device: str,
                  preprocessing: Optional[Callable] = None) -> None:
         self.video_path = video_path
         self.preprocessing = preprocessing
-        self.device = device
 
     @abstractmethod
     def __call__(self, idx: int) -> Union[np.ndarray, torch.tensor]:
@@ -33,7 +31,7 @@ class DecordVideoDataset(BaseDataset):
                  device: str,
                  num_threads: int = 0,
                  preprocessing: Optional[Callable] = None) -> None:
-        super().__init__(video_path, device, preprocessing)
+        super().__init__(video_path, preprocessing)
         dev, num = device.split(':')
         num = int(num)
         if dev == 'cpu':
@@ -73,10 +71,8 @@ class DecordVideoDataset(BaseDataset):
 class CV2VideoDataset(BaseDataset):
     def __init__(self,
                  video_path: str,
-                 device: str,
-                 num_threads: int = 0,
                  preprocessing: Optional[Callable] = None) -> None:
-        super().__init__(video_path, device, preprocessing)
+        super().__init__(video_path, preprocessing)
         self.video = cv2.VideoCapture(self.video_path)
         if not self.video.isOpened():
             raise ValueError(f'Video {video_path} is not opened')

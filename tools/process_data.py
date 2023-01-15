@@ -143,8 +143,6 @@ def main(
         indexer=indexer,
         saver=saver,
         log_file=log_file,
-        device='cpu:2',
-        num_threads=cfg.dataset.num_threads,
     )
 
 
