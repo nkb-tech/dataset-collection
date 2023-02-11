@@ -13,16 +13,17 @@ export DOCKER_CONTAINER_NAME
 export DEFAULT_DATA_PATH
 export DOCKER_DATA_PATH
 
-docker build . \
-    --file docker/Dockerfile \
+docker build \
     --tag ${DOCKER_IMAGE_NAME}/${DOCKER_IMAGE_VERSION} \
-    --build-arg UID=${DOCKER_UID} \
-    --build-arg GID=${DOCKER_GID} \
-    --build-arg PW=${DOCKER_USER_PASSWORD} \
-    --build-arg USER=${DOCKER_USER_NAME} \
+    --file docker/Dockerfile \
+    --build-arg DOCKER_UID=${DOCKER_UID} \
+    --build-arg DOCKER_GID=${DOCKER_GID} \
+    --build-arg DOCKER_PW=${DOCKER_USER_PASSWORD} \
+    --build-arg DOCKER_USER=${DOCKER_USER_NAME} \
     --build-arg PROJECT_PATH=${DOCKER_PROJECT_PATH} \
     --build-arg PROJECT_NAME=${DOCKER_PROJECT_NAME} \
-    --build-arg DEFAULT_PATH=${DOCKER_DEFAULT_PATH}
+    --build-arg DEFAULT_PATH=${DOCKER_DEFAULT_PATH} \
+    .
 
 docker run \
     -itd \
