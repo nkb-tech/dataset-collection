@@ -2,7 +2,7 @@ ARG CUDA_VERSION=11.3.1
 ARG OS_VERSION=20.04
 ARG CUDNN_VERSION=8
 
-FROM nvidia/cuda:${CUDA_VERSION}-cudnn${CUDNN_VERSION}-devel-ubuntu${OS_VERSION}
+FROM nvidia/cuda:${CUDA_VERSION}-cudnn${CUDNN_VERSION}-devel-ubuntu${OS_VERSION} AS main
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -14,70 +14,62 @@ RUN apt-get update \
             ffmpeg \
             libsm6 \
             libxext6 \
-            wget \
-            curl \
             git \
-            vim \
-            cmake \
             ca-certificates \
             lsb-release \
             sudo \
             gnupg2 \
-            zip \
-            unzip \
             python3-pip \
             python3-dev \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
-ARG USER=user
-ARG UID=1000
-ARG GID=1000
-ARG PW=user
+ARG DOCKER_USER
+ARG DOCKER_UID
+ARG DOCKER_GID
+ARG DOCKER_PW
 ARG DEFAULT_PATH=/home
 ARG PROJECT_PATH=src/
 ARG PROJECT_NAME=project
 
-WORKDIR ${DEFAULT_PATH}/${USER}
+RUN useradd \
+        --create-home ${DOCKER_USER} \
+        --uid=${DOCKER_UID} \
+    && echo "${DOCKER_USER}:${DOCKER_PW}" | chpasswd \
+    && adduser ${DOCKER_USER} sudo \
+    && usermod -a -G sudo ${DOCKER_USER}
 
-RUN useradd -m ${USER} --uid=${UID} \
-    && echo "${USER}:${PW}" | chpasswd \
-    && adduser ${USER} sudo \
-    && usermod -a -G sudo ${USER}
+USER ${DOCKER_UID}:${DOCKER_GID}
 
-RUN mkdir -p ${DEFAULT_PATH}/${USER}/${PROJECT_PATH}/ \
-    && chown -R ${UID}:${GID} ./
+WORKDIR ${DEFAULT_PATH}/${DOCKER_USER}
 
-COPY --chown=${USER}:${USER} [
-    "requirements.txt",
-    "requirements/",
-    "${DEFAULT_PATH}/${USER}/${PROJECT_PATH}/${PROJECT_NAME}/",
-]
+COPY --chown=${DOCKER_USER} requirements.txt ${DEFAULT_PATH}/${DOCKER_USER}/${PROJECT_PATH}/${PROJECT_NAME}/
+COPY --chown=${DOCKER_USER} requirements/ ${DEFAULT_PATH}/${DOCKER_USER}/${PROJECT_PATH}/${PROJECT_NAME}/requirements/
 
 # install default requirements
 RUN pip install \
     --no-cache-dir \
     --requirement \
-        ${DEFAULT_PATH}/${USER}/${PROJECT_PATH}/${PROJECT_NAME}/requirements/preinstall.txt \
+        ${DEFAULT_PATH}/${DOCKER_USER}/${PROJECT_PATH}/${PROJECT_NAME}/requirements/preinstall.txt \
     --requirement \
-        ${DEFAULT_PATH}/${USER}/${PROJECT_PATH}/${PROJECT_NAME}/requirements/install.txt \
-    && rm ${DEFAULT_PATH}/${USER}/${PROJECT_PATH}/${PROJECT_NAME}/requirements.txt \
-    && rm -rf ${DEFAULT_PATH}/${USER}/${PROJECT_PATH}/${PROJECT_NAME}/requirements/
+        ${DEFAULT_PATH}/${DOCKER_USER}/${PROJECT_PATH}/${PROJECT_NAME}/requirements/install.txt \
+    && rm ${DEFAULT_PATH}/${DOCKER_USER}/${PROJECT_PATH}/${PROJECT_NAME}/requirements.txt \
+    && rm -rf ${DEFAULT_PATH}/${DOCKER_USER}/${PROJECT_PATH}/${PROJECT_NAME}/requirements/
 
 # install mmlab stuff directly
 # (because of we need configs)
 # TODO: rm this and add to requirements
-RUN git clone https://github.com/open-mmlab/mmdetection.git ${DEFAULT_PATH}/${USER}/mmlab/mmdet \
-    && cd ${DEFAULT_PATH}/${USER}/mmlab/mmdet \
+RUN git clone https://github.com/open-mmlab/mmdetection.git ${DEFAULT_PATH}/${DOCKER_USER}/mmlab/mmdet \
+    && cd ${DEFAULT_PATH}/${DOCKER_USER}/mmlab/mmdet \
     && pip install \
         --no-cache-dir \
         --verbose \
         --editable . \
-    && git clone https://github.com/open-mmlab/mmpose.git ${DEFAULT_PATH}/${USER}/mmlab/mmpose \
-    && cd ${DEFAULT_PATH}/${USER}/mmlab/mmpose \
+    && git clone https://github.com/open-mmlab/mmpose.git ${DEFAULT_PATH}/${DOCKER_USER}/mmlab/mmpose \
+    && cd ${DEFAULT_PATH}/${DOCKER_USER}/mmlab/mmpose \
     && pip install \
         --no-cache-dir \
         --verbose \
         --editable .
 
-ENV PYTHONPATH="${PYTHONPATH}:${DEFAULT_PATH}/${USER}/mmlab/mmpose:${DEFAULT_PATH}/${USER}/mmlab/mmdet"
+ENV PYTHONPATH="${PYTHONPATH}:${DEFAULT_PATH}/${DOCKER_USER}/mmlab/mmpose:${DEFAULT_PATH}/${DOCKER_USER}/mmlab/mmdet"
