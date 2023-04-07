@@ -38,7 +38,7 @@ RUN useradd \
     && echo "${DOCKER_USER}:${DOCKER_PW}" | chpasswd \
     && adduser ${DOCKER_USER} sudo \
     && usermod -a -G sudo ${DOCKER_USER} \
-    && echo "%sudo ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers \
+    && echo "%sudo ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 USER ${DOCKER_UID}:${DOCKER_GID}
 
